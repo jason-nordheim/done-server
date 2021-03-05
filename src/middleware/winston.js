@@ -8,7 +8,7 @@ const expressWinston = require("express-winston");
  * ou can still use your custom error handler like express.handler,
  * just be sure to put the logger before any of your handlers.
  */
-export const winstonLogger = () =>
+const winstonLogger = () =>
   expressWinston.logger({
     transports: [new winston.transports.Console()],
     format: winston.format.combine(
@@ -32,7 +32,7 @@ export const winstonLogger = () =>
     colorize: false, // Color the text and status code, using the Express/morgan color palette (text: gray, status: default green, 3XX cyan, 4XX yellow, 5XX red).
   });
 
-export const winstonErrorLogger = () =>
+const winstonErrorLogger = () =>
   expressWinston.errorLogger({
     transports: [new winston.transports.Console()],
     format: winston.format.combine(
@@ -40,3 +40,8 @@ export const winstonErrorLogger = () =>
       winston.format.json()
     ),
   });
+
+module.exports = {
+  winstonLogger,
+  winstonErrorLogger,
+};
