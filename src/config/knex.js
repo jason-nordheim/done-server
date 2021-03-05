@@ -3,7 +3,7 @@ const knex = require("knex")(config);
 
 const getAllUsers = () => knex("users").select();
 
-const insertUser = (user) => knex("users").insert(user).returning("*")[0];
+const insertUser = (user) => knex("users").insert(user);
 
 module.exports = {
   getAllUsers,

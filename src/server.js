@@ -32,36 +32,45 @@ app.post("/users", (req, res) => {
       .json({ error: "No User object included in request body" })
       .send();
   }
+  const { username, email, password, first_name, last_name } = req.body.user;
 
   // validate required fields
-  if (!req.body.user.username) {
+  if (!username) {
     res
       .status(400)
       .json({ error: "User object is missing required property: 'username'" })
       .send();
-  } else if (!req.body.user.email) {
+  } else if (!email) {
     res
       .status(400)
       .json({ error: "User object is missing required field: 'email'" })
       .send();
-  } else if (!req.body.user.password) {
+  } else if (!password) {
     res
       .status(400)
       .json({ error: "User object is missing required field: 'password'" })
       .send();
   }
 
-  hash(req.body.user.password).then((pwd, error) => {
-    if (error) res.status(500).json({ error }).send();
-    
-    res.json({ hashedPwd: pwd });
+  hash(password).then((pwd) => {
+    return insertUser({
+      username,
+      email,
+      password_digest: pwd,
+      first_name,
+      last_name,
+    })
+      .then((createdUser) => {
+        console.debug("userCreated", createdUser);
+        res.status(200).json(createdUser).send();
+      })
+      .catch((error) => {
+        if (error.constraint) res.status(400).json({ error }).send();
+        else res.status(500).json({ error }).send();
+      });
   });
-
-  //   insertUser(user).then((user, error) => {
-  //     if (error) res.status(500).json({ error }).send();
-  //     else res.status(200).json({ user });
-  //   });
 });
+
 
 // error logging
 app.use(winstonErrorLogger);
