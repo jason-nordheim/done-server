@@ -1,4 +1,3 @@
-const cors = require("cors");
 const winston = require("winston");
 const expressWinston = require("express-winston");
 
