@@ -1,7 +1,12 @@
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const express = require("express");
-const { getAllUsers, insertUser } = require("./config/knex");
+const {
+  getAllUsers,
+  insertUser,
+  getUser,
+  updateUser,
+} = require("./middleware/knex");
 const { winstonLogger, winstonErrorLogger } = require("./middleware/winston");
 const { hash } = require("./util/bcrypt");
 
@@ -15,7 +20,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // logging
-//app.use(winstonLogger);
+app.use(winstonLogger);
 
 // routes
 app.get("/users", (req, res) => {
@@ -24,8 +29,30 @@ app.get("/users", (req, res) => {
     else res.status(200).json({ users: data }).send();
   });
 });
+
+app.get("/users/:id", (req, res) => {
+  const id = Number.parseInt(req.params.id);
+
+  // make sure there is an id
+  if (!id)
+    return res
+      .status(400)
+      .json({ error: "Id required to retrieve a user" })
+      .send();
+
+  getUser(id)
+    .then((user) => {
+      if (!user[0])
+        return res
+          .status(400)
+          .json({ error: `No user found with id: ${id}` })
+          .send();
+      else return res.status(200).json({ user }).send();
+    })
+    .catch((error) => res.status(400).json({ error }).send());
+});
+
 app.post("/users", (req, res) => {
-  console.log(req);
   if (!req.body.user) {
     res
       .status(400)
@@ -71,6 +98,44 @@ app.post("/users", (req, res) => {
   });
 });
 
+app.put("/users/:id", (req, res) => {
+  const id = Number.parseInt(req.params.id);
+
+  // make sure there is an id
+  if (!id) {
+    return res
+      .status(400)
+      .json({ error: "Id required to update a user", params: req.params.id })
+      .send();
+  }
+
+  // make sure there is a user associated with the provided id
+  return getUser(id)
+    .then((user) => {
+      const { username, password, first_name, last_name, email } = req.body;
+      if (!user[0])
+        return res
+          .status(400)
+          .json({ error: `No user found with id: ${id}` })
+          .send();
+      else if (!username && !password && !first_name && !last_name && !email)
+        return res
+          .status(400)
+          .json({ error: `Request body contained no fields` })
+          .send();
+      else
+        return hash(password).then((hashedPwd) =>
+          updateUser(id, {
+            username,
+            password_digest: hashedPwd,
+            first_name,
+            last_name,
+            email,
+          }).then((userUpdated) => res.status(200).json(userUpdated).send())
+        );
+    })
+    .catch((error) => res.status(400).json({ error }).send());
+});
 
 // error logging
 app.use(winstonErrorLogger);
